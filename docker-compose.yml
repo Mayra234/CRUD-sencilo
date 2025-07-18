@@ -1,6 +1,3 @@
-# docker-compose.yml
-version: "3.8"
-
 services:
   mongo:
     image: mongo
@@ -9,23 +6,41 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-
+    restart: always
   backend:
     build: ./backend
     container_name: backend
     ports:
       - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/
+    depends_on:
+      - mongo
+    command: npm run dev
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm start
+    depends_on:
+      - backend
+
+  seed:
+    build: ./backend
+    container_name: seed
+    command: node seed.js
     environment:
       - MONGO_URL=mongodb://mongo:27017/taskmanager
     depends_on:
       - mongo
-
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "3000:80"
-    depends_on:
       - backend
 
 volumes:
